@@ -10,9 +10,12 @@ from sqlalchemy.orm import Session
 from database import SessionLocal, engine
 from models import Bookmark
 from starlette.middleware.cors import CORSMiddleware
+import requests
 
+# FastAPI 애플리케이션 생성
 app = FastAPI()
 
+# cors 설정
 origins = [
     "http://127.0.0.1:3000",
     "http://localhost:3000"
@@ -29,11 +32,11 @@ app.add_middleware(
 
 JWK = Dict[str, str]
 
-
+#JWKS 모델 정의
 class JWKS(BaseModel):
     keys: List[JWK]
 
-
+# JWT 인증 정보 모델 정의 
 class JWTAuthorizationCredentials(BaseModel):
     jwt_token: str
     header: Dict[str, str]
@@ -41,20 +44,9 @@ class JWTAuthorizationCredentials(BaseModel):
     signature: str
     message: str
 
-    # @validator('claims')
-    # def validate_claims(cls, value):
-    #     value['auth_time'] = str(value.get('auth_time'))
-    #     value['exp'] = str(value.get('exp'))
-    #     value['iat'] = str(value.get('iat'))
-    #     return value
-
-# 새 북마크를 나타내는 Pydantic 스키마
-class BookmarkCreate(BaseModel):
-    url: str
-    title: str
-
-import requests
-
+# JWKS 가져오는 함수 정의 
+# AWS Cognito 사용자 풀에 대한 공개 키를 얻어옴 
+# 환경변수화 해야함 
 def get_jwks() -> JWKS:
     return requests.get(
         # f"https://cognito-idp.{os.environ.get('COGNITO_REGION')}.amazonaws.com/"
@@ -62,21 +54,16 @@ def get_jwks() -> JWKS:
         "https://cognito-idp.ap-northeast-2.amazonaws.com/ap-northeast-2_LfAalhnRP/.well-known/jwks.json"
     ).json()
 
-jwks = get_jwks()
 
-
+# JWTBearer 클래스 정의 
 class JWTBearer(HTTPBearer):
     def __init__(self, jwks: JWKS, auto_error: bool = True):
         super().__init__(auto_error=auto_error)
-        # print({jwk["kid"]: jwk for jwk in jwks['keys']})
         self.kid_to_jwk = {jwk["kid"]: jwk for jwk in jwks['keys']}
         
-
+		# JWT 토큰 검증 함수 
     def verify_jwk_token(self, jwt_credentials: JWTAuthorizationCredentials) -> bool:
         try:
-            # print(JWTAuthorizationCredentials.header["kid"])
-            print(jwt_credentials.header["kid"])
-            # print(self.kid_to_jwk['eUCbi7dyK+gm4PHbBz8f8vyuMJmq4NnTAlklH3jeUVM='])
             public_key = self.kid_to_jwk[jwt_credentials.header["kid"]]
         except KeyError:
             raise HTTPException(
@@ -87,7 +74,7 @@ class JWTBearer(HTTPBearer):
         decoded_signature = base64url_decode(jwt_credentials.signature.encode())
 
         return key.verify(jwt_credentials.message.encode(), decoded_signature)
-
+		# 요청 처리 함수 
     async def __call__(self, request: Request) -> Optional[JWTAuthorizationCredentials]:
         credentials: HTTPAuthorizationCredentials = await super().__call__(request)
 
@@ -101,6 +88,7 @@ class JWTBearer(HTTPBearer):
             message, signature = jwt_token.rsplit(".", 1)
 
             try:
+                # claims의 각 속성이 str형태여야 함 
                 jwt_claims = jwt.get_unverified_claims(jwt_token)
                 jwt_claims['auth_time'] = str(jwt_claims['auth_time'])
                 jwt_claims['exp'] = str(jwt_claims['exp'])
@@ -122,7 +110,17 @@ class JWTBearer(HTTPBearer):
         
         
 # JWTBearer 인스턴스 생성
+jwks = get_jwks()
 jwt_bearer = JWTBearer(jwks)
+
+# JWT에서 사용자 이름 추출 함수 
+async def get_current_user(
+    credentials: JWTAuthorizationCredentials = Depends(jwt_bearer)
+) -> str:
+    try:
+        return credentials.claims["username"]
+    except KeyError:
+        HTTPException(status_code=HTTP_403_FORBIDDEN, detail="Username missing")
 
 # 데이터베이스 세션 생성 함수
 def get_db():
@@ -132,9 +130,9 @@ def get_db():
     finally:
         db.close()
 
-# 사용자별 북마크 가져오기 
-@app.get("/bookmarks/{user_name}", dependencies=[Depends(jwt_bearer)])
-async def get_bookmarks(user_name: str, db: Session = Depends(get_db)):
+# 사용자별 북마크 가져오기 엔드포인트 
+@app.get("/bookmarks", dependencies=[Depends(jwt_bearer)])
+async def get_bookmarks(user_name: str = Depends(get_current_user), db: Session = Depends(get_db)):
     """
     username에 해당하는 모든 북마크를 가져오는 엔드포인트.
     """
@@ -145,12 +143,12 @@ async def get_bookmarks(user_name: str, db: Session = Depends(get_db)):
 
 
 # 새 북마크를 생성하는 엔드포인트
-@app.post("/bookmarks/", dependencies=[Depends(jwt_bearer)])
+@app.post("/bookmarks", dependencies=[Depends(jwt_bearer)])
 async def create_bookmark(
     neighborhood: str,
-    user_name: str,
     age: int,
     gender: str,
+    user_name: str = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """
@@ -166,32 +164,31 @@ async def create_bookmark(
     return new_bookmark
 
 # 사용자 탈퇴로 인한 북마크 삭제하기 
-@app.delete("/bookmarks/{user_name}", dependencies=[Depends(jwt_bearer)])
-async def delete_bookmark_endpoint(user_name: str, db: Session = Depends(get_db)):
+@app.delete("/bookmarks", dependencies=[Depends(jwt_bearer)])
+async def delete_bookmark_endpoint(user_name: str = Depends(get_current_user), db: Session = Depends(get_db)):
     """
     주어진 북마크 ID에 해당하는 북마크를 삭제하는 엔드포인트.
     """
-    # 북마크를 삭제합니다.
     # 데이터베이스에서 해당 북마크를 가져옵니다.
-    bookmark = db.query(Bookmark).filter(Bookmark.user_name == user_name).first()
-    if not bookmark:
+    bookmarks = db.query(Bookmark).filter(Bookmark.user_name == user_name).all()
+    if not bookmarks:
         # 만약 해당 ID에 해당하는 북마크가 없다면 HTTPException을 발생시킵니다.
         raise HTTPException(status_code=404, detail="Bookmark not found")
     
-    # 데이터베이스에서 해당 북마크를 삭제합니다.
-    db.delete(bookmark)
+    # 데이터베이스에서 해당 사용자의 모든 북마크를 삭제합니다.
+    for bookmark in bookmarks:
+        db.delete(bookmark)
     db.commit()
 
      # 삭제에 성공했음을 알리는 메시지를 반환합니다.
     return {"message": "Bookmark deleted successfully"}
 
 # 북마크 삭제하기  
-@app.delete("/bookmarks/{user_name}/{neighborhood}", dependencies=[Depends(jwt_bearer)])
-async def delete_bookmark_endpoint(user_name: str, neighborhood: str, db: Session = Depends(get_db)):
+@app.delete("/bookmarks/{neighborhood}", dependencies=[Depends(jwt_bearer)])
+async def delete_bookmark_endpoint( neighborhood: str,user_name: str = Depends(get_current_user), db: Session = Depends(get_db)):
     """
     주어진 북마크 ID에 해당하는 북마크를 삭제하는 엔드포인트.
     """
-    # 북마크를 삭제합니다.
     # 데이터베이스에서 해당 북마크를 가져옵니다.
     bookmark = db.query(Bookmark).filter(Bookmark.user_name == user_name , Bookmark.neighborhood == neighborhood).first()
     if not bookmark:
