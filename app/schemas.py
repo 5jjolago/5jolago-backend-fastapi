@@ -4,7 +4,7 @@ from pydantic import BaseModel
 class Bookmark(BaseModel):
     neighborhood: str
     user_name: str
-    age: str
+    age: int
     gender: str
 
     class Config:
