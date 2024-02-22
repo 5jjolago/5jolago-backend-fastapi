@@ -11,6 +11,7 @@ from .database import SessionLocal, ENGINE
 from app import models,schemas
 from starlette.middleware.cors import CORSMiddleware
 import requests
+from sqlalchemy.exc import IntegrityError
 
 # FastAPI 애플리케이션 생성
 app = FastAPI()
@@ -157,8 +158,13 @@ async def create_bookmark(
     # 새로운 북마크를 생성하여 데이터베이스에 추가
     new_bookmark = models.Bookmark(neighborhood=neighborhood, user_name=user_name, age=age, gender=gender)
     db.add(new_bookmark)
-    db.commit()
-    db.refresh(new_bookmark)
+
+    try:
+        db.commit()
+        db.refresh(new_bookmark)
+    except IntegrityError as e:
+        db.rollback()
+        print("duplicated")
     
     # 생성된 북마크를 반환
     return new_bookmark
