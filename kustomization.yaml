@@ -1,0 +1,11 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+patchesStrategicMerge:
+- fastapi.yaml
+resources:
+- fastapi.yaml
+images:
+- name: cicd-image
+  newName: 062061726924.dkr.ecr.ap-northeast-2.amazonaws.com/fastapi
+  newTag: latest
+namespace: default
