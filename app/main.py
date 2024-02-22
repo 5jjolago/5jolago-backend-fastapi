@@ -7,7 +7,7 @@ from starlette.requests import Request
 from starlette.status import HTTP_403_FORBIDDEN
 from fastapi import Depends, FastAPI, HTTPException
 from sqlalchemy.orm import Session
-from .database import SessionLocal, ENGINE
+from database import SessionLocal, ENGINE
 from app import models,schemas
 from starlette.middleware.cors import CORSMiddleware
 import requests
