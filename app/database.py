@@ -7,7 +7,7 @@ user = "admin"
 pwd = "qwer1234"
 host = "mysql-svc.seokhyun.svc.cluster.local"
 port = 3306
-db_url = f'mysql+pymysql://{user}:{quote(pwd)}@{host}:{port}/bookmarks'
+db_url = f'mysql+pymysql://{user}:{quote(pwd)}@{host}/bookmarks'
 
 ENGINE = create_engine(db_url, echo=True)
 
