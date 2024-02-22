@@ -1,8 +1,7 @@
 from urllib.parse import quote
 from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
-from sqlalchemy.ext.declarative import declarative_base
-
+from .models import Base
 user = "admin"
 pwd = "qwer1234"
 # host = "mysql-svc.seokhyun.svc.cluster.local"
@@ -20,6 +19,5 @@ SessionLocal = scoped_session(
     )
 )
 
-Base = declarative_base()
 Base.query = SessionLocal.query_property()
 Base.metadata.create_all(bind=ENGINE)
