@@ -143,7 +143,7 @@ async def get_bookmarks(user_name: str = Depends(get_current_user), db: Session 
 
 
 # 새 북마크를 생성하는 엔드포인트
-@app.post("/bookmarks/", dependencies=[Depends(jwt_bearer)],response_model=List[schemas.Bookmark])
+@app.post("/bookmarks/", dependencies=[Depends(jwt_bearer)],response_model=schemas.Bookmark)
 async def create_bookmark(
     neighborhood: str,
     age: int,
