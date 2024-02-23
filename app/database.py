@@ -14,14 +14,14 @@ sec_data = v1.read_namespaced_secret("mysql-secret", "default").data
 decoded_data = {key: base64.b64decode(value).decode('utf-8') for key, value in sec_data.items()}
 print(decoded_data)
 # "dbhost" 값을 출력합니다.
-db_host = decoded_data.get("dbhost")
-print("DB Host:", db_host)
-
-user = "admin"
-pwd = "qwer1234"
-host = "mysql-svc.default.svc.cluster.local"
-#host = "mysql.cd2mgo42smp1.ap-northeast-2.rds.amazonaws.com"
+user = decoded_data.get("username")
+pwd = decoded_data.get("userpass")
+host = decoded_data.get("dbhost")
 port = 3306
+print("DB Host:", host)
+print("user: " ,user)
+print("password: ",pwd)
+
 db_url = f'mysql+pymysql://{user}:{quote(pwd)}@{host}:{port}/bookmarks'
 
 ENGINE = create_engine(db_url, echo=True)
