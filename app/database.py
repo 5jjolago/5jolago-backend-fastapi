@@ -12,7 +12,7 @@ sec_data = v1.read_namespaced_secret("mysql-secret", "default").data
 
 # base64로 인코딩된 데이터를 디코딩합니다.
 decoded_data = {key: base64.b64decode(value).decode('utf-8') for key, value in sec_data.items()}
-
+print(decoded_data)
 # "dbhost" 값을 출력합니다.
 db_host = decoded_data.get("dbhost")
 print("DB Host:", db_host)
