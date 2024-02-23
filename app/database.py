@@ -7,11 +7,15 @@ import base64
 
 config.load_incluster_config()
 v1 = client.CoreV1Api()
-sec = str(v1.read_namespaced_secret("mysql-secret", "default").data)
-print(sec)
-print(sec['dbhost'])
-pas = base64.b64decode(sec.strip().split()[1].replace('}', '').replace("'", ''))
-print(pas)
+# 시크릿 데이터를 가져옵니다.
+sec_data = v1.read_namespaced_secret("mysql-secret", "default").data
+
+# base64로 인코딩된 데이터를 디코딩합니다.
+decoded_data = {key: base64.b64decode(value).decode('utf-8') for key, value in sec_data.items()}
+
+# "dbhost" 값을 출력합니다.
+db_host = decoded_data.get("dbhost")
+print("DB Host:", db_host)
 
 user = "admin"
 pwd = "qwer1234"
