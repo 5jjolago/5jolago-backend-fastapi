@@ -12,9 +12,41 @@ from app import models,schemas
 from starlette.middleware.cors import CORSMiddleware
 import requests
 from sqlalchemy.exc import IntegrityError
+from redis import Redis
+import uvicorn
+import json
 
 # FastAPI 애플리케이션 생성
 app = FastAPI()
+
+# Redis 연결 설정
+redis_client = Redis(
+    host='ozzorago-redis-j4cn7u.serverless.apn2.cache.amazonaws.com',
+    port=6379,
+    db=0,
+    ssl=True,  # TLS를 사용하는 경우
+    ssl_cert_reqs=None,
+    decode_responses=True
+)
+
+# 데이터 저장
+redis_client.set('mykey', 'Hello Redis')
+print("redis 제발 돼라")
+# 데이터 조회
+value = redis_client.get('mykey')
+print("레디스 됬냐? "+value)
+print("Hello world!", flush=True)
+
+@app.on_event("startup")
+async def startup_event():
+    # Redis 서버에 연결 시도
+    try:
+        redis_client.ping()
+        print("Connected to Redis")
+    except Exception as e:
+        print(f"Redis connection error: {e}")
+
+
 
 # cors 설정
 # origins = [
@@ -132,15 +164,15 @@ def get_db():
         db.close()
 
 # 사용자별 북마크 가져오기 엔드포인트 
-@app.get("/bookmarks/", dependencies=[Depends(jwt_bearer)],response_model=List[schemas.Bookmark])
-async def get_bookmarks(user_name: str = Depends(get_current_user), db: Session = Depends(get_db)):
-    """
-    username에 해당하는 모든 북마크를 가져오는 엔드포인트.
-    """
-    bookmarks = db.query(models.Bookmark).filter(models.Bookmark.user_name == user_name).all()
-    if not bookmarks:
-        raise HTTPException(status_code=404, detail="Bookmark not found")
-    return bookmarks
+# @app.get("/bookmarks/", dependencies=[Depends(jwt_bearer)],response_model=List[schemas.Bookmark])
+# async def get_bookmarks(user_name: str = Depends(get_current_user), db: Session = Depends(get_db)):
+#     """
+#     username에 해당하는 모든 북마크를 가져오는 엔드포인트.
+#     """
+#     bookmarks = db.query(models.Bookmark).filter(models.Bookmark.user_name == user_name).all()
+#     if not bookmarks:
+#         raise HTTPException(status_code=404, detail="Bookmark not found")
+#     return bookmarks
 
 
 # 새 북마크를 생성하는 엔드포인트
@@ -207,3 +239,34 @@ async def delete_bookmark_endpoint( neighborhood: str,user_name: str = Depends(g
 
      # 삭제에 성공했음을 알리는 메시지를 반환합니다.
     return {"message": "Bookmark deleted successfully"}
+
+
+
+
+@app.get("/bookmarks/",dependencies=[Depends(jwt_bearer)], response_model=List[schemas.Bookmark])
+async def get_bookmarks(user_name: str = Depends(get_current_user), db: Session = Depends(get_db)):
+    """
+    username에 해당하는 모든 북마크를 가져오는 엔드포인트.
+    Redis를 사용하여 캐싱 처리를 합니다.
+    """
+    # Redis에서 캐시된 데이터를 조회
+    cache_key = f"bookmarks:{user_name}"
+    cached_bookmarks = redis_client.get(cache_key)
+    
+    if cached_bookmarks:
+        # 캐시된 데이터가 있으면 JSON으로 변환하여 반환
+        return json.loads(cached_bookmarks)
+
+    # DB에서 데이터 조회
+    bookmarks = db.query(models.Bookmark).filter(models.Bookmark.user_name == user_name).all()
+    if not bookmarks:
+        raise HTTPException(status_code=404, detail="Bookmark not found")
+    
+    # 조회 결과를 JSON으로 변환
+    bookmarks_data = [schemas.Bookmark.from_orm(bookmark).dict() for bookmark in bookmarks]
+    
+    # Redis에 데이터 캐싱 (예: 1시간 동안 유효)
+    redis_client.setex(cache_key, 3600, json.dumps(bookmarks_data))
+    
+    return bookmarks_data
+
