@@ -255,10 +255,12 @@ async def get_bookmarks(user_name: str = Depends(get_current_user), db: Session 
     
     if cached_bookmarks:
         # 캐시된 데이터가 있으면 JSON으로 변환하여 반환
+        print("cached : ",json.loads(cached_bookmarks))
         return json.loads(cached_bookmarks)
 
     # DB에서 데이터 조회
     bookmarks = db.query(models.Bookmark).filter(models.Bookmark.user_name == user_name).all()
+    print("not cached: ",bookmarks)
     if not bookmarks:
         raise HTTPException(status_code=404, detail="Bookmark not found")
     
