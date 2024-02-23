@@ -243,7 +243,7 @@ async def delete_bookmark_endpoint( neighborhood: str,user_name: str = Depends(g
 
 
 
-@app.get("/bookmarks/",dependencies=[Depends(jwt_bearer)], response_model=List[schemas.Bookmark])
+@app.get("/bookmarks/",dependencies=[Depends(jwt_bearer)], response_model=schemas.Bookmark)
 async def get_bookmarks(user_name: str = Depends(get_current_user), db: Session = Depends(get_db)):
     """
     username에 해당하는 모든 북마크를 가져오는 엔드포인트.
