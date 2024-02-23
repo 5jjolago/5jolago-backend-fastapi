@@ -3,7 +3,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
 from .models import Base
 from kubernetes import client, config
-config.load_kube_config()
+config.load_incluster_config()
 v1 = client.CoreV1Api()
 secret = v1.read_namespaced_secret("mysql-secret", "default")
 print(secret)
