@@ -3,11 +3,13 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
 from .models import Base
 from kubernetes import client, config
+import base64
+
 config.load_incluster_config()
 v1 = client.CoreV1Api()
-secret = v1.read_namespaced_secret("mysql-secret", "default")
-print(secret)
-
+sec = str(v1.read_namespaced_secret("mysql-secret", "default").data)
+pas = base64.b64decode(sec.strip().split()[1].translate(None, '}\''))
+print(pas)
 
 user = "admin"
 pwd = "qwer1234"
