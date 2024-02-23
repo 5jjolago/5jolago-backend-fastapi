@@ -4,8 +4,8 @@ from sqlalchemy.orm import scoped_session, sessionmaker
 from .models import Base
 user = "admin"
 pwd = "qwer1234"
-# host = "mysql-svc.seokhyun.svc.cluster.local"
-host = "mysql.cd2mgo42smp1.ap-northeast-2.rds.amazonaws.com"
+host = "mysql-svc.default.svc.cluster.local"
+#host = "mysql.cd2mgo42smp1.ap-northeast-2.rds.amazonaws.com"
 port = 3306
 db_url = f'mysql+pymysql://{user}:{quote(pwd)}@{host}:{port}/bookmarks'
 
