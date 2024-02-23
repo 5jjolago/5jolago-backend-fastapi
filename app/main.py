@@ -12,7 +12,6 @@ from app import models,schemas
 from starlette.middleware.cors import CORSMiddleware
 import requests
 from sqlalchemy.exc import IntegrityError
-import aioredis
 
 # FastAPI 애플리케이션 생성
 app = FastAPI()
@@ -30,16 +29,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-# redis 연동 
-pp = FastAPI()
 
-# Redis 클러스터의 엔드포인트와 포트 번호
-REDIS_URL = "redis://redis-serverless-j4cn7u.serverless.apn2.cache.amazonaws.com:6379"
-
-# Redis 연결 객체 생성 (비동기)
-redis = aioredis.from_url(REDIS_URL, encoding="utf-8", decode_responses=True)
-
-##################################################################################
 
 JWK = Dict[str, str]
 
@@ -72,7 +62,7 @@ class JWTBearer(HTTPBearer):
         super().__init__(auto_error=auto_error)
         self.kid_to_jwk = {jwk["kid"]: jwk for jwk in jwks['keys']}
         
-      # JWT 토큰 검증 함수 
+		# JWT 토큰 검증 함수 
     def verify_jwk_token(self, jwt_credentials: JWTAuthorizationCredentials) -> bool:
         try:
             public_key = self.kid_to_jwk[jwt_credentials.header["kid"]]
@@ -85,7 +75,7 @@ class JWTBearer(HTTPBearer):
         decoded_signature = base64url_decode(jwt_credentials.signature.encode())
 
         return key.verify(jwt_credentials.message.encode(), decoded_signature)
-      # 요청 처리 함수 
+		# 요청 처리 함수 
     async def __call__(self, request: Request) -> Optional[JWTAuthorizationCredentials]:
         credentials: HTTPAuthorizationCredentials = await super().__call__(request)
 
@@ -124,7 +114,6 @@ class JWTBearer(HTTPBearer):
 jwks = get_jwks()
 jwt_bearer = JWTBearer(jwks)
 
-
 # JWT에서 사용자 이름 추출 함수 
 async def get_current_user(
     credentials: JWTAuthorizationCredentials = Depends(jwt_bearer)
@@ -142,33 +131,6 @@ def get_db():
     finally:
         db.close()
 
-#----------------------------------------------------------------------------------------
-# 레디스 엔드포인트 
-@app.on_event("startup")
-async def startup_event():
-    global redis
-    redis = await aioredis.create_redis_pool(REDIS_URL)
-
-@app.on_event("shutdown")
-async def shutdown_event():
-    redis.close()
-    await redis.wait_closed()
-
-# Redis에 데이터 저장하는 비동기 엔드포인트
-@app.post("/set/{key}")
-async def set_key(key: str, value: str):
-    await redis.set(key, value)
-    return {"message": f"Key {key} set to {value}"}
-
-# Redis에서 데이터 가져오는 비동기 엔드포인트
-@app.get("/get/{key}")
-async def get_key(key: str):
-    value = await redis.get(key)
-    if value is None:
-        return {"error": "Key not found"}
-    return {"key": key, "value": value}
-
-#----------------------------------------------------------------------------------------
 # 사용자별 북마크 가져오기 엔드포인트 
 @app.get("/bookmarks/", dependencies=[Depends(jwt_bearer)],response_model=List[schemas.Bookmark])
 async def get_bookmarks(user_name: str = Depends(get_current_user), db: Session = Depends(get_db)):
