@@ -8,6 +8,7 @@ v1 = client.CoreV1Api()
 secret = v1.read_namespaced_secret("mysql-secret", "default")
 print(secret)
 
+
 user = "admin"
 pwd = "qwer1234"
 host = "mysql-svc.default.svc.cluster.local"
