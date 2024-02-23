@@ -2,6 +2,12 @@ from urllib.parse import quote
 from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
 from .models import Base
+from kubernetes import client, config
+config.load_kube_config()
+v1 = client.CoreV1Api()
+secret = v1.read_namespaced_secret("mysql-pass", "default")
+print(secret)
+
 user = "admin"
 pwd = "qwer1234"
 host = "mysql-svc.default.svc.cluster.local"
