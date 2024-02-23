@@ -9,6 +9,7 @@ config.load_incluster_config()
 v1 = client.CoreV1Api()
 sec = str(v1.read_namespaced_secret("mysql-secret", "default").data)
 print(sec)
+print(sec['dbhost'])
 pas = base64.b64decode(sec.strip().split()[1].replace('}', '').replace("'", ''))
 print(pas)
 
