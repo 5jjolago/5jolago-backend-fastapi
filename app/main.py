@@ -222,7 +222,7 @@ async def delete_bookmark_endpoint(user_name: str = Depends(get_current_user), d
     return {"message": "Bookmark deleted successfully"}
 
 # 북마크 삭제하기  
-@app.delete("/bookmarks/{neighborhood}/", dependencies=[Depends(jwt_bearer)],response_model=schemas.Bookmark)
+@app.delete("/bookmarks/{neighborhood}/", dependencies=[Depends(jwt_bearer)])
 async def delete_bookmark_endpoint( neighborhood: str,user_name: str = Depends(get_current_user), db: Session = Depends(get_db)):
     """
     주어진 북마크 ID에 해당하는 북마크를 삭제하는 엔드포인트.
