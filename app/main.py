@@ -251,7 +251,7 @@ async def get_bookmarks(user_name: str = Depends(get_current_user), db: Session 
     """
     # Redis에서 캐시된 데이터를 조회
     cache_key = f"bookmarks:{user_name}"
-    redis_client.delete(cache_key)
+    #redis_client.delete(cache_key)
     cached_bookmarks = redis_client.get(cache_key)
 
     if cached_bookmarks:
