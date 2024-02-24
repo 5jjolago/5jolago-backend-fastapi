@@ -13,7 +13,6 @@ from starlette.middleware.cors import CORSMiddleware
 import requests
 from sqlalchemy.exc import IntegrityError
 from redis import Redis
-import uvicorn
 import json
 
 # FastAPI 애플리케이션 생성
@@ -29,13 +28,6 @@ redis_client = Redis(
     decode_responses=True
 )
 
-# 데이터 저장
-redis_client.set('mykey', 'Hello Redis')
-print("redis 제발 돼라")
-# 데이터 조회
-value = redis_client.get('mykey')
-print("레디스 됬냐? "+value)
-print("Hello world!", flush=True)
 
 @app.on_event("startup")
 async def startup_event():

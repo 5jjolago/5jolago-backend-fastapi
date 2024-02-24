@@ -18,9 +18,9 @@ user = decoded_data.get("username")
 pwd = decoded_data.get("userpass")
 host = decoded_data.get("dbhost")
 port = 3306
-print("DB Host:", host)
-print("user: " ,user)
-print("password: ",pwd)
+# print("DB Host:", host)
+# print("user: " ,user)
+# print("password: ",pwd)
 
 db_url = f'mysql+pymysql://{user}:{quote(pwd)}@{host}:{port}/bookmarks'
 
