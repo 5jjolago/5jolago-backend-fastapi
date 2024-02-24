@@ -20,7 +20,7 @@ app = FastAPI()
 
 # Redis 연결 설정
 redis_client = Redis(
-    host='ozzorago-redis-j4cn7u.serverless.apn2.cache.amazonaws.com',
+    host='redis-svc.default.svc.cluster.local',
     port=6379,
     db=0,
     ssl=True,  # TLS를 사용하는 경우
