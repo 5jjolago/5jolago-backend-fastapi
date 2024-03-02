@@ -1,2 +1,1 @@
-cicd test v...
-k
+ccd test v
