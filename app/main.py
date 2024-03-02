@@ -40,7 +40,7 @@ async def startup_event():
 
 
 
-cors 설정
+# cors 설정
 origins = [
     "http://127.0.0.1:3000",
     "http://localhost:3000"
