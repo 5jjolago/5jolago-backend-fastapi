@@ -43,7 +43,9 @@ async def startup_event():
 # cors 설정
 origins = [
     "http://www.nalraon.kr",
-    "https://www.nalraon.kr"
+    "https://www.nalraon.kr",
+    "http://www.nalraon.kr/",
+    "https://www.nalraon.kr/",
 ]
 
 app.add_middleware(
