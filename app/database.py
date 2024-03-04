@@ -22,7 +22,7 @@ port = 3306
 # print("user: " ,user)
 # print("password: ",pwd)
 
-db_url = f'mysql+pymysql://{user}:{quote(pwd)}@{host}:{port}/bookmarks?charset=utf8mb4'
+db_url = f'mysql+pymysql://{user}:{quote(pwd)}@{host}:{port}/bookmarks?charset=utf8'
 
 ENGINE = create_engine(db_url, echo=True)
 
