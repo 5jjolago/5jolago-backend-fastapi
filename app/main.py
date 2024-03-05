@@ -187,7 +187,7 @@ async def create_bookmark(
 
     try:
         print(neighborhood)
-        print(new_bookmark)
+        print(new_bookmark.neighborhood)
         print("##")
         db.commit()
         db.refresh(new_bookmark)
