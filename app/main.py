@@ -186,6 +186,9 @@ async def create_bookmark(
     db.add(new_bookmark)
 
     try:
+        print(neighborhood)
+        print(new_bookmark)
+        print("##")
         db.commit()
         db.refresh(new_bookmark)
     except IntegrityError as e:
