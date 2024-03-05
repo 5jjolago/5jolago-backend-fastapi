@@ -184,6 +184,7 @@ async def create_bookmark(
     # 새로운 북마크를 생성하여 데이터베이스에 추가
     new_bookmark = models.Bookmark(neighborhood=neighborhood, user_name=user_name, age=age, gender=gender)
     print(new_bookmark)
+    print('###########################')
     db.add(new_bookmark)
 
     try:
