@@ -171,7 +171,7 @@ def get_db():
 
 
 # 새 북마크를 생성하는 엔드포인트
-@app.post("/bookmarks/", dependencies=[Depends(jwt_bearer)],response_model=schemas.Bookmark)
+@app.post("/bookmarks/", dependencies=[Depends(jwt_bearer)], response_model=schemas.Bookmark)
 async def create_bookmark(
     neighborhood: str,
     age: int,
@@ -179,24 +179,29 @@ async def create_bookmark(
     user_name: str = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """
-    새 북마크를 생성하는 엔드포인트.
-    """
-    # 새로운 북마크를 생성하여 데이터베이스에 추가
     new_bookmark = models.Bookmark(neighborhood=neighborhood, user_name=user_name, age=age, gender=gender)
     db.add(new_bookmark)
 
     try:
-        print(neighborhood)
-        print(new_bookmark.neighborhood)
-        print("##")
         db.commit()
         db.refresh(new_bookmark)
+        # Redis 캐시 업데이트
+        cache_key = f"bookmarks:{user_name}"
+        cached_bookmarks = redis_client.get(cache_key)
+        if cached_bookmarks:
+            # 캐시된 북마크가 있다면, 새 북마크 데이터를 추가합니다.
+            bookmarks = json.loads(cached_bookmarks)
+            bookmarks.append(new_bookmark)
+            redis_client.setex(cache_key, 3600, json.dumps(bookmarks))
+        else:
+            # 캐시된 북마크가 없다면, DB에서 북마크 목록을 다시 로드하고 캐시합니다.
+            bookmarks = db.query(models.Bookmark).filter(models.Bookmark.user_name == user_name).all()
+            bookmarks_data = [schemas.Bookmark.from_orm(bookmark).dict() for bookmark in bookmarks]
+            redis_client.setex(cache_key, 3600, json.dumps(bookmarks_data))
     except IntegrityError as e:
         db.rollback()
-        print("duplicated")
+        raise HTTPException(status_code=400, detail="Could not create bookmark")
     
-    # 생성된 북마크를 반환
     return new_bookmark
 
 # 사용자 탈퇴로 인한 북마크 삭제하기 
