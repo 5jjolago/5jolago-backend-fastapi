@@ -46,6 +46,7 @@ origins = [
     "https://www.nalraon.kr",
     "http://www.nalraon.kr/",
     "https://www.nalraon.kr/",
+    "http://fastapi-svc:8080"
 ]
 
 app.add_middleware(
