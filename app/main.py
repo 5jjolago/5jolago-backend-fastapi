@@ -14,31 +14,9 @@ import requests
 from sqlalchemy.exc import IntegrityError
 from redis import Redis
 import json
-from fastapi.middleware import Middleware
-import logging
 
 # FastAPI 애플리케이션 생성
 app = FastAPI()
-
-
-# 로깅을 위한 미들웨어 클래스 정의
-class LoggingMiddleware:
-    def __init__(self, logger):
-        self.logger = logger
-
-    async def __call__(self, request, call_next):
-        self.logger.info(f"Request: {request.method} {request.url}")
-        response = await call_next(request)
-        self.logger.info(f"Response: {response.status_code}")
-        return response
-
-# 로거 설정
-logger = logging.getLogger("uvicorn")
-logger.setLevel(logging.INFO)
-
-# Middleware 등록
-app.add_middleware(LoggingMiddleware, logger=logger)
-
 
 # Redis 연결 설정
 redis_client = Redis(
