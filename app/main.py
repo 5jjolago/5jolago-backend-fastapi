@@ -12,31 +12,31 @@ from app import models,schemas
 from starlette.middleware.cors import CORSMiddleware
 import requests
 from sqlalchemy.exc import IntegrityError
-# from redis import Redis
+from redis import Redis
 import json
 
 # FastAPI 애플리케이션 생성
 app = FastAPI()
 
 # Redis 연결 설정
-# redis_client = Redis(
-#     host='redis-svc.default.svc.cluster.local',
-#     port=6379,
-#     db=0,
-#     ssl=True,  # TLS를 사용하는 경우
-#     ssl_cert_reqs=None,
-#     decode_responses=True
-# )
+redis_client = Redis(
+    host='redis-svc.default.svc.cluster.local',
+    port=6379,
+    db=0,
+    ssl=True,  # TLS를 사용하는 경우
+    ssl_cert_reqs=None,
+    decode_responses=True
+)
 
 
-# @app.on_event("startup")
-# async def startup_event():
-#     # Redis 서버에 연결 시도
-#     try:
-#         redis_client.ping()
-#         print("Connected to Redis")
-#     except Exception as e:
-#         print(f"Redis connection error: {e}")
+@app.on_event("startup")
+async def startup_event():
+    # Redis 서버에 연결 시도
+    try:
+        redis_client.ping()
+        print("Connected to Redis")
+    except Exception as e:
+        print(f"Redis connection error: {e}")
 
 
 
@@ -236,7 +236,7 @@ async def delete_bookmark_endpoint( neighborhood: str,user_name: str = Depends(g
     db.commit()
 
     cache_key = f"bookmarks:{user_name}"
-    # redis_client.delete(cache_key)
+    redis_client.delete(cache_key)
 
      # 삭제에 성공했음을 알리는 메시지를 반환합니다.
     return {"message": "Bookmark deleted successfully"}
@@ -252,12 +252,12 @@ async def get_bookmarks(user_name: str = Depends(get_current_user), db: Session 
     """
     # Redis에서 캐시된 데이터를 조회
     cache_key = f"bookmarks:{user_name}"
-    # cached_bookmarks = redis_client.get(cache_key)
+    cached_bookmarks = redis_client.get(cache_key)
 
-    # if cached_bookmarks:
-    #     # 캐시된 데이터가 있으면 JSON으로 변환하여 반환
-    #     print("cached : ",json.loads(cached_bookmarks))
-    #     return json.loads(cached_bookmarks)
+    if cached_bookmarks:
+        # 캐시된 데이터가 있으면 JSON으로 변환하여 반환
+        print("cached : ",json.loads(cached_bookmarks))
+        return json.loads(cached_bookmarks)
 
     # DB에서 데이터 조회
     bookmarks = db.query(models.Bookmark).filter(models.Bookmark.user_name == user_name).all()
@@ -269,7 +269,7 @@ async def get_bookmarks(user_name: str = Depends(get_current_user), db: Session 
     bookmarks_data = [schemas.Bookmark.from_orm(bookmark).dict() for bookmark in bookmarks]
     
     # Redis에 데이터 캐싱 (예: 1시간 동안 유효)
-    # redis_client.setex(cache_key, 3600, json.dumps(bookmarks_data))
+    redis_client.setex(cache_key, 3600, json.dumps(bookmarks_data))
     
     return bookmarks_data
 
