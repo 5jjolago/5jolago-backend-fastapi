@@ -188,10 +188,12 @@ async def create_bookmark(
         # Redis 캐시 업데이트
         cache_key = f"bookmarks:{user_name}"
         cached_bookmarks = redis_client.get(cache_key)
+        
         if cached_bookmarks:
             # 캐시된 북마크가 있다면, 새 북마크 데이터를 추가합니다.
             bookmarks = json.loads(cached_bookmarks)
-            bookmarks.append(new_bookmark)
+            # Bookmark 인스턴스를 사전으로 변환하여 추가합니다.
+            bookmarks.append(schemas.Bookmark.from_orm(new_bookmark).dict())
             redis_client.setex(cache_key, 3600, json.dumps(bookmarks))
         else:
             # 캐시된 북마크가 없다면, DB에서 북마크 목록을 다시 로드하고 캐시합니다.
@@ -203,6 +205,8 @@ async def create_bookmark(
         raise HTTPException(status_code=400, detail="Could not create bookmark")
     
     return new_bookmark
+
+
 
 # 사용자 탈퇴로 인한 북마크 삭제하기 
 @app.delete("/bookmarks/", dependencies=[Depends(jwt_bearer)])
