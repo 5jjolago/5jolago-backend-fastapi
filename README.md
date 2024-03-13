@@ -1,1 +1,1 @@
-replicas test3
+jenkins test
