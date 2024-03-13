@@ -1,1 +1,1 @@
-replicas test2
+replicas test3
