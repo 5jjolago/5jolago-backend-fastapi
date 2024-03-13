@@ -74,11 +74,8 @@ class JWTAuthorizationCredentials(BaseModel):
 
 # JWKS 가져오는 함수 정의 
 # AWS Cognito 사용자 풀에 대한 공개 키를 얻어옴 
-# 환경변수화 해야함 
 def get_jwks() -> JWKS:
     return requests.get(
-        # f"https://cognito-idp.{os.environ.get('COGNITO_REGION')}.amazonaws.com/"
-        # f"{os.environ.get('COGNITO_POOL_ID')}/.well-known/jwks.json"
         "https://cognito-idp.ap-northeast-2.amazonaws.com/ap-northeast-2_LfAalhnRP/.well-known/jwks.json"
     ).json()
 
