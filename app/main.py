@@ -18,7 +18,7 @@ import json
 # FastAPI 애플리케이션 생성
 app = FastAPI()
 
-print("테스트입니이")
+print("테스트입이")
 
 # Redis 연결 설정
 redis_client = Redis(
