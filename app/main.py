@@ -18,6 +18,7 @@ import json
 # FastAPI 애플리케이션 생성
 app = FastAPI()
 
+print("test")
 
 # Redis 연결 설정
 redis_client = Redis(
@@ -38,7 +39,6 @@ async def startup_event():
         print("Connected to Redis")
     except Exception as e:
         print(f"Redis connection error: {e}")
-
 
 
 # cors 설정
