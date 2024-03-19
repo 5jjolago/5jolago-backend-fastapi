@@ -1,1 +1,1 @@
-blue green test3
+jenkins docker image clean up test
