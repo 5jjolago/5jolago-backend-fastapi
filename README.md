@@ -1,1 +1,1 @@
-jenkins docker image clean up test 
+jenkins docker image clean up
